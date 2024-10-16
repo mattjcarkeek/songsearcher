@@ -1,0 +1,150 @@
+:host {
+  --theme-color: #1DB954;
+  --background-color: #000000;
+  font-family: Arial, sans-serif;
+}
+
+.main {
+  background-color: var(--background-color);
+  color: var(--theme-color);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem;
+}
+
+h1 {
+  font-size: 2.5rem;
+  margin-bottom: 2rem;
+}
+
+.search-container {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  max-width: 600px;
+  margin-bottom: 2rem;
+}
+
+.search-input {
+  width: 70%;
+  padding: 0.5rem;
+  font-size: 1rem;
+  background-color: var(--background-color);
+  color: var(--theme-color);
+  border: 1px solid var(--theme-color);
+  border-radius: 4px 0 0 4px;
+}
+
+.search-button {
+  padding: 0.5rem 1rem;
+  font-size: 1rem;
+  background-color: var(--theme-color);
+  color: var(--background-color);
+  border: none;
+  border-radius: 0 4px 4px 0;
+  cursor: pointer;
+}
+
+.content-container {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.search-results {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 70%;
+  max-width: 800px;
+}
+
+.song-item {
+  display: flex;
+  width: 100%;
+  background-color: rgba(29, 185, 84, 0.1);
+  margin-bottom: 1rem;
+  padding: 1rem;
+  border-radius: 4px;
+}
+
+.album-cover {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  margin-right: 1rem;
+}
+
+.song-details {
+  flex: 1;
+}
+
+.song-details h3 {
+  margin: 0 0 0.5rem 0;
+}
+
+.song-details p {
+  margin: 0 0 0.25rem 0;
+}
+
+.playlist-info {
+  font-style: italic;
+  color: rgba(29, 185, 84, 0.7);
+}
+
+.delete-button, .delete-all-button {
+  background-color: #ff4136;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  margin-top: 5px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.delete-button:hover, .delete-all-button:hover {
+  background-color: #ff1a1a;
+}
+
+.delete-all-button {
+  background-color: #ff6347;
+  margin-left: 10px;
+}
+
+.deleted-songs-column {
+  width: 25%;
+  padding: 1rem;
+  background-color: rgba(29, 185, 84, 0.05);
+  border-radius: 4px;
+}
+
+.deleted-songs-column ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.deleted-songs-column li {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+  opacity: 0.7;
+}
+
+.album-cover-small {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  margin-right: 0.5rem;
+}
+
+.deleted-songs-column strong {
+  font-size: 0.9rem;
+}
+
+.deleted-songs-column p {
+  font-size: 0.8rem;
+  margin: 0;
+}

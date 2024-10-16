@@ -3,8 +3,8 @@ import { AppComponent } from './app/app.component';
 import { Routes, provideRouter } from '@angular/router';
 
 const routes: Routes = [
-  { path: 'callback', component: AppComponent },
-  // ... other routes
+  { path: '', component: AppComponent },
+  { path: '**', redirectTo: '' }
 ];
 
 bootstrapApplication(AppComponent, {

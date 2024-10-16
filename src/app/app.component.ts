@@ -34,7 +34,7 @@ export class AppComponent implements OnInit {
   constructor() {
     this.spotify = SpotifyApi.withImplicitGrant(
       'f93a05bca4ee42888f07134fefd4deb0',
-      'https://mattjcarkeek.github.io/songsearcher/callback',
+      'https://mattjcarkeek.github.io/songsearcher/',
       ['playlist-modify-public', 'playlist-modify-private']
     );
   }

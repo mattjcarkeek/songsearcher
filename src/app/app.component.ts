@@ -25,11 +25,15 @@ export class AppComponent implements OnInit {
   deletedSongs: { song: Song, playlists: string[] }[] = [];
   private spotify: SpotifyApi | null = null;
   isSearching: boolean = false;
+  spotlightArtists: { [playlistId: string]: string } = {};
 
   private playlistIds = [
     '5yeiIBl8YttUOvfvs0kXNs',
     '1HgIJqYLqxKhgrw5jXALrb',
-    '0UWQxGY3dNsUTdlDJcMJH2'
+    '0UWQxGY3dNsUTdlDJcMJH2',
+    '3eufB5nRCDdmsx64WJVCwm',
+    '6dR3uyMfA0a8zQ6VLsjI4I',
+    '4L7nQ4qrIQWpAfHgO3w6ky'
   ];
 
   private clientId = 'f93a05bca4ee42888f07134fefd4deb0';
@@ -40,6 +44,7 @@ export class AppComponent implements OnInit {
 
   async ngOnInit() {
     await this.authenticateSpotify();
+    await this.determineSpotlightArtists();
   }
 
   private async authenticateSpotify() {
@@ -50,7 +55,8 @@ export class AppComponent implements OnInit {
     if (popup) {
       return new Promise<void>((resolve) => {
         const checkPopup = setInterval(() => {
-          try {            if (popup.closed) {
+          try {
+            if (popup.closed) {
               clearInterval(checkPopup);
               resolve();
             } else {
@@ -183,6 +189,32 @@ export class AppComponent implements OnInit {
   async deleteFromAllLists(song: Song) {
     for (const playlistName of song.playlists) {
       await this.deleteSong(song, playlistName);
+    }
+  }
+
+  async determineSpotlightArtists() {
+    const spotlightPlaylistIds = [
+      '3eufB5nRCDdmsx64WJVCwm',
+      '6dR3uyMfA0a8zQ6VLsjI4I',
+      '4L7nQ4qrIQWpAfHgO3w6ky'
+    ];
+
+    for (const playlistId of spotlightPlaylistIds) {
+      if (this.spotify) {
+        const tracks = await this.spotify.playlists.getPlaylistItems(playlistId);
+        const artistCounts: { [artist: string]: number } = {};
+
+        tracks.items.forEach((item: any) => {
+          const mainArtist = item.track.artists[0].name;
+          artistCounts[mainArtist] = (artistCounts[mainArtist] || 0) + 1;
+        });
+
+        const featuredArtist = Object.keys(artistCounts).reduce((a, b) => 
+          artistCounts[a] > artistCounts[b] ? a : b
+        );
+
+        this.spotlightArtists[playlistId] = featuredArtist;
+      }
     }
   }
 }

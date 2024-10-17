@@ -1,4 +1,12 @@
 <main class="main">
+  <div class="spotlight-panel">
+    <h2>Spotlight Artists</h2>
+    <ul>
+      @for (playlistId of ['3eufB5nRCDdmsx64WJVCwm', '6dR3uyMfA0a8zQ6VLsjI4I', '4L7nQ4qrIQWpAfHgO3w6ky']; track playlistId) {
+        <li>{{ spotlightArtists[playlistId] }}</li>
+      }
+    </ul>
+  </div>
   <h1>{{ title }}</h1>
   <div class="search-container">
     <input #searchInput type="text" placeholder="Search for songs" class="search-input" 

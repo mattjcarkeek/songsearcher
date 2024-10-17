@@ -149,8 +149,6 @@ h1 {
   margin: 0;
 }
 
-/* ... (existing styles remain the same) */
-
 .search-button:disabled,
 .delete-button:disabled,
 .delete-all-button:disabled {
@@ -159,4 +157,26 @@ h1 {
   cursor: not-allowed;
 }
 
-/* ... (rest of the existing styles) */
+.spotlight-panel {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background-color: rgba(29, 185, 84, 0.1);
+  padding: 15px;
+  border-radius: 8px;
+  max-width: 200px;
+}
+
+.spotlight-panel h2 {
+  font-size: 1.2rem;
+  margin-bottom: 10px;
+}
+
+.spotlight-panel ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.spotlight-panel li {
+  margin-bottom: 5px;
+}

@@ -17,7 +17,8 @@
     <div class="spotlight-edit-modal" *ngIf="editingSpotlight">
       <h3>Edit Spotlight Artist</h3>
       <div class="spotlight-search">
-        <input #spotlightSearch type="text" placeholder="Search for artist" class="search-input">
+        <input #spotlightSearch type="text" placeholder="Search for artist" class="search-input"
+        (keyup.enter)="searchSpotlightArtist(editingSpotlight!, spotlightSearch.value)">
         <button (click)="searchSpotlightArtist(editingSpotlight!, spotlightSearch.value)" class="search-button">Search</button>
       </div>
       <ul class="spotlight-results">

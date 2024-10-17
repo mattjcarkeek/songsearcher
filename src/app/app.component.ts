@@ -18,12 +18,12 @@ interface Song {
   styleUrl: './app.component.css'
 })
 export class AppComponent implements OnInit {
-  title = 'Lone Star Song Deleter';
+  title = 'Lone Star Song Searcher';
   playlists: any[] = [];
   allSongs: Song[] = [];
   searchResults: Song[] = [];
   deletedSongs: { song: Song, playlists: string[] }[] = [];
-  private spotify: SpotifyApi;
+  private spotify: SpotifyApi | null = null;
 
   private playlistIds = [
     '5yeiIBl8YttUOvfvs0kXNs',
@@ -31,29 +31,53 @@ export class AppComponent implements OnInit {
     '0UWQxGY3dNsUTdlDJcMJH2'
   ];
 
-  constructor() {
-    this.spotify = SpotifyApi.withImplicitGrant(
-      'f93a05bca4ee42888f07134fefd4deb0',
-      'https://mattjcarkeek.github.io/songsearcher/',
-      ['playlist-modify-public', 'playlist-modify-private']
-    );
-  }
+  private clientId = 'f93a05bca4ee42888f07134fefd4deb0';
+  private redirectUri = 'https://mattjcarkeek.github.io/songsearcher/';
+  private scopes = ['playlist-modify-public', 'playlist-modify-private'];
+
+  constructor() {}
 
   async ngOnInit() {
-    await this.spotify.authenticate();
-    await this.loadAllSongs();
+    await this.authenticateSpotify();
+    if (this.spotify) {
+      await this.loadAllSongs();
+    }
+  }
+
+  private async authenticateSpotify() {
+    const authUrl = `https://accounts.spotify.com/authorize?client_id=${this.clientId}&redirect_uri=${encodeURIComponent(this.redirectUri)}&scope=${encodeURIComponent(this.scopes.join(' '))}&response_type=token`;
+    
+    const popup = window.open(authUrl, 'Spotify Login', 'width=800,height=600');
+
+    if (popup) {
+      const receiveMessage = (event: MessageEvent) => {
+        if (event.origin !== window.location.origin) return;
+
+        const { access_token } = event.data;
+        if (access_token) {
+          this.spotify = SpotifyApi.withAccessToken(this.clientId, access_token);
+          window.removeEventListener('message', receiveMessage);
+          popup.close();
+          this.loadAllSongs();
+        }
+      };
+
+      window.addEventListener('message', receiveMessage, false);
+    } else {
+      console.error('Popup blocked or not opened');
+    }
   }
 
   async loadAllSongs() {
     for (const playlistId of this.playlistIds) {
-      const playlist = await this.spotify.playlists.getPlaylist(playlistId);
+      const playlist = await this.spotify!.playlists.getPlaylist(playlistId);
       this.playlists.push(playlist);
 
       let offset = 0;
       let hasMoreTracks = true;
 
       while (hasMoreTracks) {
-        const tracks = await this.spotify.playlists.getPlaylistItems(playlistId, undefined, undefined, 50, offset);
+        const tracks = await this.spotify!.playlists.getPlaylistItems(playlistId, undefined, undefined, 50, offset);
         
         for (const item of tracks.items) {
           const song: Song = {
@@ -97,7 +121,7 @@ export class AppComponent implements OnInit {
         return;
       }
 
-      await this.spotify.playlists.removeItemsFromPlaylist(playlist.id, {
+      await this.spotify!.playlists.removeItemsFromPlaylist(playlist.id, {
         tracks: [{ uri: `spotify:track:${song.id}` }]
       });
     

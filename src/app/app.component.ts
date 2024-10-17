@@ -24,6 +24,7 @@ export class AppComponent implements OnInit {
   searchResults: Song[] = [];
   deletedSongs: { song: Song, playlists: string[] }[] = [];
   private spotify: SpotifyApi | null = null;
+  isSearching: boolean = false;
 
   private playlistIds = [
     '5yeiIBl8YttUOvfvs0kXNs',
@@ -49,8 +50,7 @@ export class AppComponent implements OnInit {
     if (popup) {
       return new Promise<void>((resolve) => {
         const checkPopup = setInterval(() => {
-          try {
-            if (popup.closed) {
+          try {            if (popup.closed) {
               clearInterval(checkPopup);
               resolve();
             } else {

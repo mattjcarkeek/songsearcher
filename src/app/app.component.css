@@ -148,3 +148,15 @@ h1 {
   font-size: 0.8rem;
   margin: 0;
 }
+
+/* ... (existing styles remain the same) */
+
+.search-button:disabled,
+.delete-button:disabled,
+.delete-all-button:disabled {
+  background-color: #cccccc;
+  color: #666666;
+  cursor: not-allowed;
+}
+
+/* ... (rest of the existing styles) */

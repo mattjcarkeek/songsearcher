@@ -1,8 +1,13 @@
 <main class="main">
   <h1>{{ title }}</h1>
   <div class="search-container">
-    <input #searchInput type="text" placeholder="Search for songs" class="search-input">
-    <button (click)="searchSongs(searchInput.value)" class="search-button">Search</button>
+    <input #searchInput type="text" placeholder="Search for songs" class="search-input" 
+           (keyup.enter)="searchSongs(searchInput.value)">
+    <button (click)="searchSongs(searchInput.value)" 
+            [disabled]="isSearching" 
+            class="search-button">
+      {{ isSearching ? 'Searching...' : 'Search' }}
+    </button>
   </div>
   <div class="content-container">
     <div class="search-results">
@@ -14,9 +19,13 @@
             <p>{{ song.artists }}</p>
             <p class="playlist-info">Found in: {{ song.playlists.join(', ') }}</p>
             @for (playlist of song.playlists; track playlist) {
-              <button (click)="deleteSong(song, playlist)" class="delete-button">Delete from {{ playlist }}</button>
+              <button (click)="deleteSong(song, playlist)" 
+                      [disabled]="isSearching" 
+                      class="delete-button">Delete from {{ playlist }}</button>
             }
-            <button (click)="deleteFromAllLists(song)" class="delete-all-button">Delete from all lists</button>
+            <button (click)="deleteFromAllLists(song)" 
+                    [disabled]="isSearching" 
+                    class="delete-all-button">Delete from all lists</button>
           </div>
         </div>
       }

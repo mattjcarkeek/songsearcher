@@ -3,30 +3,33 @@
   <ul>
     @for (playlistId of ['3eufB5nRCDdmsx64WJVCwm', '6dR3uyMfA0a8zQ6VLsjI4I', '4L7nQ4qrIQWpAfHgO3w6ky']; track playlistId) {
       <li>
-        {{ spotlightArtists[playlistId].name }} - 
+        {{ spotlightArtists[playlistId].name }}
         <img [src]="spotlightArtists[playlistId].image" alt="{{ spotlightArtists[playlistId].artist }}" class="artist-image">
         {{ spotlightArtists[playlistId].artist }}
         <button (click)="toggleEditSpotlight(playlistId)" class="edit-button">
           {{ editingSpotlight === playlistId ? 'Cancel' : 'Edit' }}
         </button>
-        @if (editingSpotlight === playlistId) {
-          <div class="spotlight-search">
-            <input #spotlightSearch type="text" placeholder="Search for artist" class="search-input">
-            <button (click)="searchSpotlightArtist(playlistId, spotlightSearch.value)" class="search-button">Search</button>
-          </div>
-          @if (spotlightSearchResults[playlistId]!.length > 0) {
-            <ul class="spotlight-results">
-              @for (artist of spotlightSearchResults[playlistId]; track artist.name) {
-                <li (click)="updateSpotlightArtist(playlistId, artist.name)">{{ artist.name }}</li>
-              }
-            </ul>
-          }
-        }
       </li>
     }
   </ul>
 </div>
+  <div class="modal-overlay" *ngIf="editingSpotlight"></div>
 
+  <div class="spotlight-edit-modal" *ngIf="editingSpotlight">
+    <h3>Edit Spotlight Artist</h3>
+    <div class="spotlight-search">
+      <input #spotlightSearch type="text" placeholder="Search for artist" class="search-input">
+      <button (click)="searchSpotlightArtist(editingSpotlight!, spotlightSearch.value)" class="search-button">Search</button>
+    </div>
+    <ul class="spotlight-results">
+      @for (artist of spotlightSearchResults[editingSpotlight!]; track artist.name) {
+        <li (click)="updateSpotlightArtist(editingSpotlight!, artist.name)">
+          {{ artist.name }}
+        </li>
+      }
+    </ul>
+    <button (click)="cancelEditSpotlight()" class="cancel-button">Cancel</button>
+  </div>
 <main class="main">
   <h1>{{ title }}</h1>
   <div class="search-container">

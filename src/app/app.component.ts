@@ -27,6 +27,9 @@ export class AppComponent implements OnInit {
   isSearching: boolean = false;
   spotlightArtists: { [playlistId: string]: { name: string, artist: string, image: string } } = {};
 
+  editingSpotlight: string | null = null;
+  spotlightSearchResults: { [playlistId: string]: any[] } = {};
+
   private playlistIds = [
     '5yeiIBl8YttUOvfvs0kXNs',
     '1HgIJqYLqxKhgrw5jXALrb',
@@ -223,4 +226,37 @@ export class AppComponent implements OnInit {
         };
       }
     }
-  }}
+  }
+
+  toggleEditSpotlight(playlistId: string) {
+    this.editingSpotlight = this.editingSpotlight === playlistId ? null : playlistId;
+    this.spotlightSearchResults[playlistId] = [];
+  }
+
+  searchSpotlightArtist(playlistId: string, query: string) {
+    const lowercaseQuery = query.toLowerCase();
+    const uniqueArtists = new Set<string>();
+    
+    this.allSongs.forEach(song => {
+      if (song.artists.toLowerCase().includes(lowercaseQuery)) {
+        uniqueArtists.add(song.artists.split(', ')[0]);
+      }
+    });
+
+    this.spotlightSearchResults[playlistId] = Array.from(uniqueArtists).map(artist => ({ name: artist }));
+  }
+
+  updateSpotlightArtist(playlistId: string, artistName: string) {
+    const artistSongs = this.allSongs.filter(song => song.artists.split(', ')[0] === artistName);
+    const artistImage = artistSongs[0]?.albumCover || '';
+
+    this.spotlightArtists[playlistId] = {
+      name: `Spotlight: ${artistName}`,
+      artist: artistName,
+      image: artistImage
+    };
+
+    this.editingSpotlight = null;
+    this.spotlightSearchResults[playlistId] = [];
+  }
+}

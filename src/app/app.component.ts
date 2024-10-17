@@ -25,7 +25,7 @@ export class AppComponent implements OnInit {
   deletedSongs: { song: Song, playlists: string[] }[] = [];
   private spotify: SpotifyApi | null = null;
   isSearching: boolean = false;
-  spotlightArtists: { [playlistId: string]: string } = {};
+  spotlightArtists: { [playlistId: string]: { name: string, artist: string, image: string } } = {};
 
   private playlistIds = [
     '5yeiIBl8YttUOvfvs0kXNs',
@@ -201,6 +201,7 @@ export class AppComponent implements OnInit {
 
     for (const playlistId of spotlightPlaylistIds) {
       if (this.spotify) {
+        const playlist = await this.spotify.playlists.getPlaylist(playlistId);
         const tracks = await this.spotify.playlists.getPlaylistItems(playlistId);
         const artistCounts: { [artist: string]: number } = {};
 
@@ -213,8 +214,13 @@ export class AppComponent implements OnInit {
           artistCounts[a] > artistCounts[b] ? a : b
         );
 
-        this.spotlightArtists[playlistId] = featuredArtist;
+        const artistInfo = await this.spotify.artists.get(tracks.items[0].track.artists[0].id);
+
+        this.spotlightArtists[playlistId] = {
+          name: playlist.name,
+          artist: featuredArtist,
+          image: artistInfo.images[0]?.url || ''
+        };
       }
     }
-  }
-}
+  }}

@@ -29,6 +29,7 @@ export class AppComponent implements OnInit {
   spotlightArtists: { [playlistId: string]: { name: string, artist: string, image: string } } = {};
   editingSpotlight: string | null = null;
   spotlightSearchResults: { [playlistId: string]: any[] } = {};
+  selectedArtistForSpotlight: string | null = null;
 
   private playlistIds = [
     '5yeiIBl8YttUOvfvs0kXNs',
@@ -48,6 +49,16 @@ export class AppComponent implements OnInit {
   async ngOnInit() {
     await this.authenticateSpotify();
     await this.determineSpotlightArtists();
+  }
+
+  selectArtistForConfirmation(artistName: string) {
+    this.selectedArtistForSpotlight = artistName;
+  }
+
+  confirmSpotlightArtistUpdate() {
+    if (this.editingSpotlight && this.selectedArtistForSpotlight) {
+      this.updateSpotlightArtist(this.editingSpotlight, this.selectedArtistForSpotlight);
+    }
   }
 
   private async authenticateSpotify() {
@@ -231,6 +242,7 @@ export class AppComponent implements OnInit {
   toggleEditSpotlight(playlistId: string) {
     this.editingSpotlight = this.editingSpotlight === playlistId ? null : playlistId;
     this.spotlightSearchResults[playlistId] = [];
+    this.selectedArtistForSpotlight = null;
   }
 
   searchSpotlightArtist(playlistId: string, query: string) {
@@ -271,6 +283,7 @@ export class AppComponent implements OnInit {
 
     this.editingSpotlight = null;
     this.spotlightSearchResults[playlistId] = [];
+    this.selectedArtistForSpotlight = null;
 
     // Refresh the playlist data
     await this.loadAllSongs();
@@ -279,5 +292,6 @@ export class AppComponent implements OnInit {
   cancelEditSpotlight() {
     this.editingSpotlight = null;
     this.spotlightSearchResults = {};
+    this.selectedArtistForSpotlight = null;
   }
 }

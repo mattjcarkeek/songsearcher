@@ -156,24 +156,33 @@ h1 {
   color: #666666;
   cursor: not-allowed;
 }
+  .spotlight-panel {
+    background-color: rgba(29, 185, 84, 0.1);
+    padding: 15px;
+    width: 100%;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+  }
 
-.spotlight-panel {
-  position: absolute;
-  top: 20px;
-  left: 20px;
-  background-color: rgba(29, 185, 84, 0.1);
-  padding: 15px;
-  border-radius: 8px;
-  max-width: 200px;
-}
   .spotlight-panel h2 {
     font-size: 1.2rem;
-    margin-bottom: 10px;
+    margin-right: 20px;
   }
 
   .spotlight-panel ul {
     list-style-type: none;
     padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-around;
+    width: 100%;
+  }
+
+  .spotlight-panel li {
+    display: flex;
+    align-items: center;
+    margin: 10px;
   }
 
   .spotlight-panel .artist-image {
@@ -181,11 +190,9 @@ h1 {
     height: 50px;
     border-radius: 50%;
     margin-right: 10px;
-    vertical-align: middle;
   }
 
-  .spotlight-panel li {
-    display: flex;
-    align-items: center;
-    margin-bottom: 15px;
+  .main {
+    padding-top: 20px;
   }
+

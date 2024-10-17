@@ -281,3 +281,12 @@ h1 {
 .confirm-button:hover {
   background-color: #1ed760;
 }
+
+.error-message {
+  background-color: #ff4136;
+  color: white;
+  padding: 10px;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+  text-align: center;
+}

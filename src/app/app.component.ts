@@ -30,6 +30,7 @@ export class AppComponent implements OnInit {
   editingSpotlight: string | null = null;
   spotlightSearchResults: { [playlistId: string]: any[] } = {};
   selectedArtistForSpotlight: string | null = null;
+  errorMessage: string | null = null;
 
   private playlistIds = [
     '5yeiIBl8YttUOvfvs0kXNs',
@@ -55,9 +56,14 @@ export class AppComponent implements OnInit {
     this.selectedArtistForSpotlight = artistName;
   }
 
-  confirmSpotlightArtistUpdate() {
+  async confirmSpotlightArtistUpdate() {
     if (this.editingSpotlight && this.selectedArtistForSpotlight) {
-      this.updateSpotlightArtist(this.editingSpotlight, this.selectedArtistForSpotlight);
+      try {
+        await this.updateSpotlightArtist(this.editingSpotlight, this.selectedArtistForSpotlight);
+      } catch (error) {
+        this.errorMessage = 'Failed to update spotlight artist. Please try again.';
+        this.clearErrorMessage();
+      }
     }
   }
 
@@ -196,6 +202,8 @@ export class AppComponent implements OnInit {
     
       console.log(`Song "${song.name}" removed from playlist "${playlistName}"`);
     } catch (error) {
+      this.errorMessage = 'Failed to delete song. Please try again.';
+      this.clearErrorMessage();
       console.error('Error removing song:', error);
     }
   }
@@ -293,5 +301,11 @@ export class AppComponent implements OnInit {
     this.editingSpotlight = null;
     this.spotlightSearchResults = {};
     this.selectedArtistForSpotlight = null;
+  }
+
+  private clearErrorMessage() {
+    setTimeout(() => {
+      this.errorMessage = null;
+    }, 5000); // Clear after 5 seconds
   }
 }

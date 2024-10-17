@@ -45,6 +45,9 @@
       {{ isSearching ? 'Searching...' : 'Search' }}
     </button>
   </div>
+  <div class="error-message" *ngIf="errorMessage">
+    {{ errorMessage }}
+  </div>
   <div class="content-container">
     <div class="search-results">
       @for (song of searchResults; track song.name) {

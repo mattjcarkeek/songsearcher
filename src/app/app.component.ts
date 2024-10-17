@@ -275,6 +275,16 @@ export class AppComponent implements OnInit {
     this.selectedArtistForSpotlight = null;
   }
 
+  selectArtistForConfirmation(artistName: string) {
+    this.selectedArtistForSpotlight = artistName;
+  }
+
+  confirmSpotlightArtistUpdate() {
+    if (this.editingSpotlight && this.selectedArtistForSpotlight) {
+      this.updateSpotlightArtist(this.editingSpotlight, this.selectedArtistForSpotlight);
+    }
+  }
+
   private clearErrorMessage() {
     setTimeout(() => {
       this.errorMessage = null;

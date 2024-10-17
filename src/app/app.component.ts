@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { SpotifyApi } from '@spotify/web-api-ts-sdk';
+import { SpotifyApi, AccessToken } from '@spotify/web-api-ts-sdk';
 
 interface Song {
   id: string;
@@ -39,9 +39,6 @@ export class AppComponent implements OnInit {
 
   async ngOnInit() {
     await this.authenticateSpotify();
-    if (this.spotify) {
-      await this.loadAllSongs();
-    }
   }
 
   private async authenticateSpotify() {
@@ -50,34 +47,60 @@ export class AppComponent implements OnInit {
     const popup = window.open(authUrl, 'Spotify Login', 'width=800,height=600');
 
     if (popup) {
-      const receiveMessage = (event: MessageEvent) => {
-        if (event.origin !== window.location.origin) return;
-
-        const { access_token } = event.data;
-        if (access_token) {
-          this.spotify = SpotifyApi.withAccessToken(this.clientId, access_token);
-          window.removeEventListener('message', receiveMessage);
-          popup.close();
-          this.loadAllSongs();
-        }
-      };
-
-      window.addEventListener('message', receiveMessage, false);
+      return new Promise<void>((resolve) => {
+        const checkPopup = setInterval(() => {
+          try {
+            if (popup.closed) {
+              clearInterval(checkPopup);
+              resolve();
+            } else {
+              const popupUrl = popup.location.href;
+              if (popupUrl.includes('access_token=')) {
+                clearInterval(checkPopup);
+                const params = new URLSearchParams(popupUrl.split('#')[1]);
+                const accessToken = params.get('access_token');
+                const expiresIn = params.get('expires_in');
+                if (accessToken && expiresIn) {
+                  const tokenExpirationTimestamp = Date.now() + parseInt(expiresIn) * 1000;
+                  const accessTokenObject: AccessToken = {
+                    access_token: accessToken,
+                    token_type: 'Bearer',
+                    expires_in: parseInt(expiresIn),
+                    expires: tokenExpirationTimestamp,
+                    refresh_token: ''
+                  };
+                  this.spotify = SpotifyApi.withAccessToken(this.clientId, accessTokenObject);
+                  popup.close();
+                  this.loadAllSongs();
+                  resolve();
+                }
+              }
+            }
+          } catch (error) {
+            // Ignore cross-origin errors
+          }
+        }, 100);
+      });
     } else {
       console.error('Popup blocked or not opened');
     }
   }
 
   async loadAllSongs() {
+    if (!this.spotify) {
+      console.error('Spotify API not initialized');
+      return;
+    }
+
     for (const playlistId of this.playlistIds) {
-      const playlist = await this.spotify!.playlists.getPlaylist(playlistId);
+      const playlist = await this.spotify.playlists.getPlaylist(playlistId);
       this.playlists.push(playlist);
 
       let offset = 0;
       let hasMoreTracks = true;
 
       while (hasMoreTracks) {
-        const tracks = await this.spotify!.playlists.getPlaylistItems(playlistId, undefined, undefined, 50, offset);
+        const tracks = await this.spotify.playlists.getPlaylistItems(playlistId, undefined, undefined, 50, offset);
         
         for (const item of tracks.items) {
           const song: Song = {

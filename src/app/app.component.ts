@@ -250,11 +250,31 @@ export class AppComponent implements OnInit {
     }
 
     const artistSongs = this.allSongs.filter(song => song.artists.split(', ')[0] === artistName);
+    const playlist = this.playlists.find(p => p.id === playlistId);
+
+    if (!playlist) {
+      console.error('Playlist not found');
+      return;
+    }
 
     await this.spotify.playlists.updatePlaylistItems(playlistId, { uris: [] });
 
     const trackUris = artistSongs.map(song => `spotify:track:${song.id}`);
     await this.spotify.playlists.addItemsToPlaylist(playlistId, trackUris);
+
+    // Update local allSongs array
+    this.allSongs.forEach(song => {
+      const songIndex = song.playlists.indexOf(playlist.name);
+      if (songIndex !== -1) {
+        song.playlists.splice(songIndex, 1);
+      }
+    });
+
+    artistSongs.forEach(song => {
+      if (!song.playlists.includes(playlist.name)) {
+        song.playlists.push(playlist.name);
+      }
+    });
 
     this.spotlightArtists[playlistId] = {
       name: `Spotlight: ${artistName}`,
@@ -266,7 +286,13 @@ export class AppComponent implements OnInit {
     this.spotlightSearchResults[playlistId] = [];
     this.selectedArtistForSpotlight = null;
 
-    await this.loadAllSongs();
+    // Update search results if any
+    if (this.searchResults.length > 0) {
+      this.searchResults = this.searchResults.map(song => ({
+        ...song,
+        playlists: this.allSongs.find(s => s.id === song.id)?.playlists || []
+      }));
+    }
   }
 
   cancelEditSpotlight() {

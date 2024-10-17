@@ -31,6 +31,7 @@ export class AppComponent implements OnInit {
   spotlightSearchResults: { [playlistId: string]: any[] } = {};
   selectedArtistForSpotlight: string | null = null;
   errorMessage: string | null = null;
+  isAuthenticated: boolean = false;
 
   private playlistIds = [
     '5yeiIBl8YttUOvfvs0kXNs',
@@ -48,68 +49,33 @@ export class AppComponent implements OnInit {
   constructor() {}
 
   async ngOnInit() {
-    await this.authenticateSpotify();
-    await this.determineSpotlightArtists();
-  }
+    const params = new URLSearchParams(window.location.hash.substr(1));
+    const accessToken = params.get('access_token');
+    const expiresIn = params.get('expires_in');
 
-  selectArtistForConfirmation(artistName: string) {
-    this.selectedArtistForSpotlight = artistName;
-  }
-
-  async confirmSpotlightArtistUpdate() {
-    if (this.editingSpotlight && this.selectedArtistForSpotlight) {
-      try {
-        await this.updateSpotlightArtist(this.editingSpotlight, this.selectedArtistForSpotlight);
-      } catch (error) {
-        this.errorMessage = 'Failed to apply. Make sure you are signed in.';
-        this.clearErrorMessage();
-      }
+    if (accessToken && expiresIn) {
+      this.handleAuthenticationCallback(accessToken, expiresIn);
     }
   }
 
-  private async authenticateSpotify() {
+  login() {
     const authUrl = `https://accounts.spotify.com/authorize?client_id=${this.clientId}&redirect_uri=${encodeURIComponent(this.redirectUri)}&scope=${encodeURIComponent(this.scopes.join(' '))}&response_type=token`;
-    
-    const popup = window.open(authUrl, 'Spotify Login', 'width=800,height=600');
+    window.location.href = authUrl;
+  }
 
-    if (popup) {
-      return new Promise<void>((resolve) => {
-        const checkPopup = setInterval(() => {
-          try {
-            if (popup.closed) {
-              clearInterval(checkPopup);
-              resolve();
-            } else {
-              const popupUrl = popup.location.href;
-              if (popupUrl.includes('access_token=')) {
-                clearInterval(checkPopup);
-                const params = new URLSearchParams(popupUrl.split('#')[1]);
-                const accessToken = params.get('access_token');
-                const expiresIn = params.get('expires_in');
-                if (accessToken && expiresIn) {
-                  const tokenExpirationTimestamp = Date.now() + parseInt(expiresIn) * 1000;
-                  const accessTokenObject: AccessToken = {
-                    access_token: accessToken,
-                    token_type: 'Bearer',
-                    expires_in: parseInt(expiresIn),
-                    expires: tokenExpirationTimestamp,
-                    refresh_token: ''
-                  };
-                  this.spotify = SpotifyApi.withAccessToken(this.clientId, accessTokenObject);
-                  popup.close();
-                  this.loadAllSongs();
-                  resolve();
-                }
-              }
-            }
-          } catch (error) {
-            // Ignore cross-origin errors
-          }
-        }, 100);
-      });
-    } else {
-      console.error('Popup blocked or not opened');
-    }
+  private handleAuthenticationCallback(accessToken: string, expiresIn: string) {
+    const tokenExpirationTimestamp = Date.now() + parseInt(expiresIn) * 1000;
+    const accessTokenObject: AccessToken = {
+      access_token: accessToken,
+      token_type: 'Bearer',
+      expires_in: parseInt(expiresIn),
+      expires: tokenExpirationTimestamp,
+      refresh_token: ''
+    };
+    this.spotify = SpotifyApi.withAccessToken(this.clientId, accessTokenObject);
+    this.isAuthenticated = true;
+    this.loadAllSongs();
+    this.determineSpotlightArtists();
   }
 
   async loadAllSongs() {
@@ -129,19 +95,21 @@ export class AppComponent implements OnInit {
         const tracks = await this.spotify.playlists.getPlaylistItems(playlistId, undefined, undefined, 50, offset);
         
         for (const item of tracks.items) {
-          const song: Song = {
-            id: item.track.id,
-            name: item.track.name,
-            artists: item.track.artists.map(artist => artist.name).join(', '),
-            playlists: [playlist.name],
-            albumCover: item.track.album.images[0]?.url || ''
-          };
+          if (item.track) {
+            const song: Song = {
+              id: item.track.id,
+              name: item.track.name,
+              artists: item.track.artists.map(artist => artist.name).join(', '),
+              playlists: [playlist.name],
+              albumCover: item.track.album.images[0]?.url || ''
+            };
 
-          const existingSong = this.allSongs.find(s => s.name === song.name && s.artists === song.artists);
-          if (existingSong) {
-            existingSong.playlists.push(playlist.name);
-          } else {
-            this.allSongs.push(song);
+            const existingSong = this.allSongs.find(s => s.name === song.name && s.artists === song.artists);
+            if (existingSong) {
+              existingSong.playlists.push(playlist.name);
+            } else {
+              this.allSongs.push(song);
+            }
           }
         }
 
@@ -163,6 +131,11 @@ export class AppComponent implements OnInit {
   }
 
   async deleteSong(song: Song, playlistName: string) {
+    if (!this.spotify) {
+      console.error('Spotify API not initialized');
+      return;
+    }
+
     try {
       const playlist = this.playlists.find(p => p.name === playlistName);
       if (!playlist) {
@@ -170,11 +143,10 @@ export class AppComponent implements OnInit {
         return;
       }
 
-      await this.spotify!.playlists.removeItemsFromPlaylist(playlist.id, {
+      await this.spotify.playlists.removeItemsFromPlaylist(playlist.id, {
         tracks: [{ uri: `spotify:track:${song.id}` }]
       });
     
-      // Remove the playlist from the song's playlists array
       const songIndex = this.allSongs.findIndex(s => s.id === song.id);
       if (songIndex !== -1) {
         this.allSongs[songIndex].playlists = this.allSongs[songIndex].playlists.filter(p => p !== playlistName);
@@ -183,7 +155,6 @@ export class AppComponent implements OnInit {
         }
       }
 
-      // Update search results
       const searchResultIndex = this.searchResults.findIndex(s => s.id === song.id);
       if (searchResultIndex !== -1) {
         this.searchResults[searchResultIndex].playlists = this.searchResults[searchResultIndex].playlists.filter(p => p !== playlistName);
@@ -192,7 +163,6 @@ export class AppComponent implements OnInit {
         }
       }
     
-      // Add or update the song in the deletedSongs array
       const deletedSongIndex = this.deletedSongs.findIndex(ds => ds.song.id === song.id);
       if (deletedSongIndex !== -1) {
         this.deletedSongs[deletedSongIndex].playlists.push(playlistName);
@@ -215,6 +185,11 @@ export class AppComponent implements OnInit {
   }
 
   async determineSpotlightArtists() {
+    if (!this.spotify) {
+      console.error('Spotify API not initialized');
+      return;
+    }
+
     const spotlightPlaylistIds = [
       '3eufB5nRCDdmsx64WJVCwm',
       '6dR3uyMfA0a8zQ6VLsjI4I',
@@ -222,20 +197,22 @@ export class AppComponent implements OnInit {
     ];
 
     for (const playlistId of spotlightPlaylistIds) {
-      if (this.spotify) {
-        const playlist = await this.spotify.playlists.getPlaylist(playlistId);
-        const tracks = await this.spotify.playlists.getPlaylistItems(playlistId);
-        const artistCounts: { [artist: string]: number } = {};
+      const playlist = await this.spotify.playlists.getPlaylist(playlistId);
+      const tracks = await this.spotify.playlists.getPlaylistItems(playlistId);
+      const artistCounts: { [artist: string]: number } = {};
 
-        tracks.items.forEach((item: any) => {
+      tracks.items.forEach((item: any) => {
+        if (item.track && item.track.artists.length > 0) {
           const mainArtist = item.track.artists[0].name;
           artistCounts[mainArtist] = (artistCounts[mainArtist] || 0) + 1;
-        });
+        }
+      });
 
-        const featuredArtist = Object.keys(artistCounts).reduce((a, b) => 
-          artistCounts[a] > artistCounts[b] ? a : b
-        );
+      const featuredArtist = Object.keys(artistCounts).reduce((a, b) => 
+        artistCounts[a] > artistCounts[b] ? a : b
+      );
 
+      if (tracks.items.length > 0 && tracks.items[0].track && tracks.items[0].track.artists.length > 0) {
         const artistInfo = await this.spotify.artists.get(tracks.items[0].track.artists[0].id);
 
         this.spotlightArtists[playlistId] = {
@@ -272,17 +249,13 @@ export class AppComponent implements OnInit {
       return;
     }
 
-    // Get all tracks by the selected artist from the main lists
     const artistSongs = this.allSongs.filter(song => song.artists.split(', ')[0] === artistName);
 
-    // Clear the existing playlist
     await this.spotify.playlists.updatePlaylistItems(playlistId, { uris: [] });
 
-    // Add the new tracks to the playlist
     const trackUris = artistSongs.map(song => `spotify:track:${song.id}`);
     await this.spotify.playlists.addItemsToPlaylist(playlistId, trackUris);
 
-    // Update the local spotlight artists data
     this.spotlightArtists[playlistId] = {
       name: `Spotlight: ${artistName}`,
       artist: artistName,
@@ -293,7 +266,6 @@ export class AppComponent implements OnInit {
     this.spotlightSearchResults[playlistId] = [];
     this.selectedArtistForSpotlight = null;
 
-    // Refresh the playlist data
     await this.loadAllSongs();
   }
 
@@ -306,6 +278,6 @@ export class AppComponent implements OnInit {
   private clearErrorMessage() {
     setTimeout(() => {
       this.errorMessage = null;
-    }, 5000); // Clear after 5 seconds
+    }, 5000);
   }
 }

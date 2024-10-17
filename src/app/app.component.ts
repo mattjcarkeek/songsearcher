@@ -26,7 +26,6 @@ export class AppComponent implements OnInit {
   private spotify: SpotifyApi | null = null;
   isSearching: boolean = false;
   spotlightArtists: { [playlistId: string]: { name: string, artist: string, image: string } } = {};
-
   editingSpotlight: string | null = null;
   spotlightSearchResults: { [playlistId: string]: any[] } = {};
 
@@ -246,17 +245,33 @@ export class AppComponent implements OnInit {
     this.spotlightSearchResults[playlistId] = Array.from(uniqueArtists).map(artist => ({ name: artist }));
   }
 
-  updateSpotlightArtist(playlistId: string, artistName: string) {
-    const artistSongs = this.allSongs.filter(song => song.artists.split(', ')[0] === artistName);
-    const artistImage = artistSongs[0]?.albumCover || '';
+  async updateSpotlightArtist(playlistId: string, artistName: string) {
+    if (!this.spotify) {
+      console.error('Spotify API not initialized');
+      return;
+    }
 
+    // Get all tracks by the selected artist from the main lists
+    const artistSongs = this.allSongs.filter(song => song.artists.split(', ')[0] === artistName);
+
+    // Clear the existing playlist
+    await this.spotify.playlists.updatePlaylistItems(playlistId, { uris: [] });
+
+    // Add the new tracks to the playlist
+    const trackUris = artistSongs.map(song => `spotify:track:${song.id}`);
+    await this.spotify.playlists.addItemsToPlaylist(playlistId, trackUris);
+
+    // Update the local spotlight artists data
     this.spotlightArtists[playlistId] = {
       name: `Spotlight: ${artistName}`,
       artist: artistName,
-      image: artistImage
+      image: artistSongs[0]?.albumCover || ''
     };
 
     this.editingSpotlight = null;
     this.spotlightSearchResults[playlistId] = [];
+
+    // Refresh the playlist data
+    await this.loadAllSongs();
   }
 }

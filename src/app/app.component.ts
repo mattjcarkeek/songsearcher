@@ -61,7 +61,7 @@ export class AppComponent implements OnInit {
       try {
         await this.updateSpotlightArtist(this.editingSpotlight, this.selectedArtistForSpotlight);
       } catch (error) {
-        this.errorMessage = 'Failed to update spotlight artist. Please try again.';
+        this.errorMessage = 'Failed to apply. Make sure you are signed in.';
         this.clearErrorMessage();
       }
     }
@@ -202,7 +202,7 @@ export class AppComponent implements OnInit {
     
       console.log(`Song "${song.name}" removed from playlist "${playlistName}"`);
     } catch (error) {
-      this.errorMessage = 'Failed to delete song. Please try again.';
+      this.errorMessage = 'Failed to apply. Make sure you are signed in.';
       this.clearErrorMessage();
       console.error('Error removing song:', error);
     }

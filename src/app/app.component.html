@@ -35,6 +35,9 @@
       </div>
     </div>
   <main class="main">
+  <div class="error-message" *ngIf="errorMessage">
+    {{ errorMessage }}
+  </div>
   <h1>{{ title }}</h1>
   <div class="search-container">
     <input #searchInput type="text" placeholder="Search for songs" class="search-input" 
@@ -44,9 +47,6 @@
             class="search-button">
       {{ isSearching ? 'Searching...' : 'Search' }}
     </button>
-  </div>
-  <div class="error-message" *ngIf="errorMessage">
-    {{ errorMessage }}
   </div>
   <div class="content-container">
     <div class="search-results">

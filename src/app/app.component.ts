@@ -272,21 +272,27 @@ export class AppComponent implements OnInit {
       '0UWQxGY3dNsUTdlDJcMJH2',
     ];
 
-    let artistSongs: Song[] = [];
+    let artistSongs: any[] = [];
 
-    // Fetch songs from each source playlist
     for (const sourcePlaylistId of sourcePlaylistIds) {
-      const playlistTracks = await this.spotify.playlists.getPlaylistItems(sourcePlaylistId);
-      const playlistArtistSongs = playlistTracks.items
-        .filter(item => item.track && item.track.artists[0].name === artistName)
-        .map(item => ({
-          id: item.track.id,
-          name: item.track.name,
-          artists: item.track.artists.map(artist => artist.name).join(', '),
-          playlists: [this.playlists.find(p => p.id === sourcePlaylistId)?.name || ''],
-          albumCover: item.track.album.images[0]?.url || ''
-        }));
-      artistSongs = [...artistSongs, ...playlistArtistSongs];
+      let offset = 0;
+      let hasMoreTracks = true;
+
+      while (hasMoreTracks) {
+        const tracks = await this.spotify.playlists.getPlaylistItems(sourcePlaylistId, undefined, undefined, 50, offset);
+        
+        const playlistArtistSongs = tracks.items
+          .filter(item => item.track && item.track.artists[0].name === artistName)
+          .map(item => item.track);
+
+        artistSongs = [...artistSongs, ...playlistArtistSongs];
+
+        if (tracks.items.length < 50) {
+          hasMoreTracks = false;
+        } else {
+          offset += 50;
+        }
+      }
     }
 
     const playlist = this.playlists.find(p => p.id === playlistId);
@@ -310,15 +316,26 @@ export class AppComponent implements OnInit {
     });
 
     artistSongs.forEach(song => {
-      if (!song.playlists.includes(playlist.name)) {
-        song.playlists.push(playlist.name);
+      const existingSong = this.allSongs.find(s => s.id === song.id);
+      if (existingSong) {
+        if (!existingSong.playlists.includes(playlist.name)) {
+          existingSong.playlists.push(playlist.name);
+        }
+      } else {
+        this.allSongs.push({
+          id: song.id,
+          name: song.name,
+          artists: song.artists.map((artist: any) => artist.name).join(', '),
+          playlists: [playlist.name],
+          albumCover: song.album.images[0]?.url || ''
+        });
       }
     });
 
     this.spotlightArtists[playlistId] = {
       name: `Spotlight: ${artistName}`,
       artist: artistName,
-      image: artistSongs[0]?.albumCover || ''
+      image: artistSongs[0]?.album.images[0]?.url || ''
     };
 
     this.editingSpotlight = null;
@@ -332,8 +349,7 @@ export class AppComponent implements OnInit {
         playlists: this.allSongs.find(s => s.id === song.id)?.playlists || []
       }));
     }
-  }
-  cancelEditSpotlight() {
+  }  cancelEditSpotlight() {
     this.editingSpotlight = null;
     this.spotlightSearchResults = {};
     this.selectedArtistForSpotlight = null;

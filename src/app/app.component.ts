@@ -200,20 +200,28 @@ export class AppComponent implements OnInit {
     for (const playlistId of spotlightPlaylistIds) {
       const playlist = await this.spotify.playlists.getPlaylist(playlistId);
       const tracks = await this.spotify.playlists.getPlaylistItems(playlistId);
-      const artistCounts: { [artist: string]: number } = {};
 
-      tracks.items.forEach((item: any) => {
-        if (item.track && item.track.artists.length > 0) {
-          const mainArtist = item.track.artists[0].name;
-          artistCounts[mainArtist] = (artistCounts[mainArtist] || 0) + 1;
-        }
-      });
+      if (tracks.items.length === 0) {
+        // Handle empty playlist
+        this.spotlightArtists[playlistId] = {
+          name: playlist.name,
+          artist: '<empty>',
+          image: ''
+        };
+      } else {
+        // Existing logic for non-empty playlists
+        const artistCounts: { [artist: string]: number } = {};
+        tracks.items.forEach((item: any) => {
+          if (item.track && item.track.artists.length > 0) {
+            const mainArtist = item.track.artists[0].name;
+            artistCounts[mainArtist] = (artistCounts[mainArtist] || 0) + 1;
+          }
+        });
 
-      const featuredArtist = Object.keys(artistCounts).reduce((a, b) => 
-        artistCounts[a] > artistCounts[b] ? a : b
-      );
+        const featuredArtist = Object.keys(artistCounts).reduce((a, b) => 
+          artistCounts[a] > artistCounts[b] ? a : b
+        );
 
-      if (tracks.items.length > 0 && tracks.items[0].track && tracks.items[0].track.artists.length > 0) {
         const artistInfo = await this.spotify.artists.get(tracks.items[0].track.artists[0].id);
 
         this.spotlightArtists[playlistId] = {

@@ -39,7 +39,8 @@ export class AppComponent implements OnInit {
     '0UWQxGY3dNsUTdlDJcMJH2',
     '3eufB5nRCDdmsx64WJVCwm',
     '6dR3uyMfA0a8zQ6VLsjI4I',
-    '4L7nQ4qrIQWpAfHgO3w6ky'
+    '4L7nQ4qrIQWpAfHgO3w6ky',
+    '2TBKaR9eCiN7Rrtc0Sml5d'
   ];
 
   private clientId = 'f93a05bca4ee42888f07134fefd4deb0';
@@ -249,7 +250,29 @@ export class AppComponent implements OnInit {
       return;
     }
 
-    const artistSongs = this.allSongs.filter(song => song.artists.split(', ')[0] === artistName);
+    const sourcePlaylistIds = [
+      '5yeiIBl8YttUOvfvs0kXNs',
+      '1HgIJqYLqxKhgrw5jXALrb',
+      '0UWQxGY3dNsUTdlDJcMJH2',
+    ];
+
+    let artistSongs: Song[] = [];
+
+    // Fetch songs from each source playlist
+    for (const sourcePlaylistId of sourcePlaylistIds) {
+      const playlistTracks = await this.spotify.playlists.getPlaylistItems(sourcePlaylistId);
+      const playlistArtistSongs = playlistTracks.items
+        .filter(item => item.track && item.track.artists[0].name === artistName)
+        .map(item => ({
+          id: item.track.id,
+          name: item.track.name,
+          artists: item.track.artists.map(artist => artist.name).join(', '),
+          playlists: [this.playlists.find(p => p.id === sourcePlaylistId)?.name || ''],
+          albumCover: item.track.album.images[0]?.url || ''
+        }));
+      artistSongs = [...artistSongs, ...playlistArtistSongs];
+    }
+
     const playlist = this.playlists.find(p => p.id === playlistId);
 
     if (!playlist) {
@@ -294,7 +317,6 @@ export class AppComponent implements OnInit {
       }));
     }
   }
-
   cancelEditSpotlight() {
     this.editingSpotlight = null;
     this.spotlightSearchResults = {};

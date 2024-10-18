@@ -235,15 +235,23 @@ export class AppComponent implements OnInit {
     const lowercaseQuery = query.toLowerCase();
     const uniqueArtists = new Set<string>();
     
+    const sourcePlaylistIds = [
+      '5yeiIBl8YttUOvfvs0kXNs',
+      '1HgIJqYLqxKhgrw5jXALrb',
+      '0UWQxGY3dNsUTdlDJcMJH2',
+    ];
+
+    const sourcePlaylists = this.playlists.filter(playlist => sourcePlaylistIds.includes(playlist.id));
+    
     this.allSongs.forEach(song => {
-      if (song.artists.toLowerCase().includes(lowercaseQuery)) {
+      if (song.artists.toLowerCase().includes(lowercaseQuery) && 
+          song.playlists.some(playlistName => sourcePlaylists.some(p => p.name === playlistName))) {
         uniqueArtists.add(song.artists.split(', ')[0]);
       }
     });
 
     this.spotlightSearchResults[playlistId] = Array.from(uniqueArtists).map(artist => ({ name: artist }));
   }
-
   async updateSpotlightArtist(playlistId: string, artistName: string) {
     if (!this.spotify) {
       console.error('Spotify API not initialized');

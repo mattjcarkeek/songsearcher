@@ -32,6 +32,7 @@ export class AppComponent implements OnInit {
   selectedArtistForSpotlight: string | null = null;
   errorMessage: string | null = null;
   isAuthenticated: boolean = false;
+  isDataLoaded: boolean = false;
 
   private playlistIds = [
     '5yeiIBl8YttUOvfvs0kXNs',
@@ -75,6 +76,7 @@ export class AppComponent implements OnInit {
     };
     this.spotify = SpotifyApi.withAccessToken(this.clientId, accessTokenObject);
     this.isAuthenticated = true;
+    this.isDataLoaded = false;
     this.loadAllSongs();
     this.determineSpotlightArtists();
   }
@@ -121,8 +123,9 @@ export class AppComponent implements OnInit {
         }
       }
     }
-  }
 
+    this.isDataLoaded = true; // Set to true after loading is complete
+  }
   searchSongs(query: string) {
     const lowercaseQuery = query.toLowerCase();
     this.searchResults = this.allSongs.filter(song =>

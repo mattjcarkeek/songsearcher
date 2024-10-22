@@ -308,3 +308,9 @@ h1 {
   background-color: #1ed760;
 }
 
+.loading-message {
+  color: var(--theme-color);
+  font-size: 1.5rem;
+  text-align: center;
+  margin-top: 2rem;
+}

@@ -41,11 +41,15 @@
   </div>
   <h1>{{ title }}</h1>
   <button *ngIf="!isAuthenticated" (click)="login()" class="login-button">Log in with Spotify</button>
+  <div *ngIf="!isDataLoaded && isAuthenticated" class="loading-message">
+    <p>Please wait while loading...</p>
+  </div>  
   <div *ngIf="isAuthenticated" class="search-container">
     <input #searchInput type="text" placeholder="Search for songs" class="search-input" 
-           (keyup.enter)="searchSongs(searchInput.value)">
+           (keyup.enter)="searchSongs(searchInput.value)"
+           [disabled]="!isDataLoaded">
     <button (click)="searchSongs(searchInput.value)" 
-            [disabled]="isSearching" 
+            [disabled]="isSearching || !isDataLoaded" 
             class="search-button">
       {{ isSearching ? 'Searching...' : 'Search' }}
     </button>

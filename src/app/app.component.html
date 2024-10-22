@@ -43,7 +43,11 @@
   <button *ngIf="!isAuthenticated" (click)="login()" class="login-button">Log in with Spotify</button>
   <div *ngIf="!isDataLoaded && isAuthenticated" class="loading-message">
     <p>Please wait while loading...</p>
-  </div>  
+    <div class="progress-bar">
+      <div class="progress" [style.width.%]="loadingProgressPercentage"></div>
+    </div>
+    <p>{{ songsLoaded }} of {{ totalSongsToLoad }} songs loaded ({{ loadingProgressPercentage | number: '1.0-0' }}%)</p>
+  </div>
   <div *ngIf="isAuthenticated" class="search-container">
     <input #searchInput type="text" placeholder="Search for songs" class="search-input" 
            (keyup.enter)="searchSongs(searchInput.value)"

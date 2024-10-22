@@ -33,6 +33,8 @@ export class AppComponent implements OnInit {
   errorMessage: string | null = null;
   isAuthenticated: boolean = false;
   isDataLoaded: boolean = false;
+  totalSongsToLoad: number = 0;
+  songsLoaded: number = 0;
 
   private playlistIds = [
     '5yeiIBl8YttUOvfvs0kXNs',
@@ -49,6 +51,10 @@ export class AppComponent implements OnInit {
   private scopes = ['playlist-modify-public', 'playlist-modify-private'];
 
   constructor() {}
+
+  get loadingProgressPercentage(): number {
+    return this.totalSongsToLoad > 0 ? (this.songsLoaded / this.totalSongsToLoad) * 100 : 0;
+  }
 
   async ngOnInit() {
     const params = new URLSearchParams(window.location.hash.substr(1));
@@ -80,53 +86,69 @@ export class AppComponent implements OnInit {
     this.loadAllSongs();
     this.determineSpotlightArtists();
   }
+    async loadAllSongs() {
+      if (!this.spotify) {
+        console.error('Spotify API not initialized');
+        return;
+      }
 
-  async loadAllSongs() {
-    if (!this.spotify) {
-      console.error('Spotify API not initialized');
-      return;
-    }
+      // Reset progress counters
+      this.totalSongsToLoad = 0;
+      this.songsLoaded = 0;
 
-    for (const playlistId of this.playlistIds) {
-      const playlist = await this.spotify.playlists.getPlaylist(playlistId);
-      this.playlists.push(playlist);
+      // fetch total number of songs to load
+      for (const playlistId of this.playlistIds) {
+        const playlist = await this.spotify.playlists.getPlaylist(playlistId);
 
-      let offset = 0;
-      let hasMoreTracks = true;
+        // Update totalSongsToLoad
+        this.totalSongsToLoad += playlist.tracks.total;
+      }
 
-      while (hasMoreTracks) {
-        const tracks = await this.spotify.playlists.getPlaylistItems(playlistId, undefined, undefined, 50, offset);
-        
-        for (const item of tracks.items) {
-          if (item.track) {
-            const song: Song = {
-              id: item.track.id,
-              name: item.track.name,
-              artists: item.track.artists.map(artist => artist.name).join(', '),
-              playlists: [playlist.name],
-              albumCover: item.track.album.images[0]?.url || ''
-            };
+      // load songs
+      for (const playlistId of this.playlistIds) {
+        const playlist = this.playlists.find(p => p.id === playlistId) || await this.spotify.playlists.getPlaylist(playlistId);
+        if (!this.playlists.includes(playlist)) {
+          this.playlists.push(playlist);
+        }
 
-            const existingSong = this.allSongs.find(s => s.name === song.name && s.artists === song.artists);
-            if (existingSong) {
-              existingSong.playlists.push(playlist.name);
-            } else {
-              this.allSongs.push(song);
+        let offset = 0;
+        let hasMoreTracks = true;
+
+        while (hasMoreTracks) {
+          const tracks = await this.spotify.playlists.getPlaylistItems(playlistId, undefined, undefined, 50, offset);
+
+          for (const item of tracks.items) {
+            if (item.track) {
+              const song: Song = {
+                id: item.track.id,
+                name: item.track.name,
+                artists: item.track.artists.map(artist => artist.name).join(', '),
+                playlists: [playlist.name],
+                albumCover: item.track.album.images[0]?.url || ''
+              };
+
+              const existingSong = this.allSongs.find(s => s.name === song.name && s.artists === song.artists);
+              if (existingSong) {
+                existingSong.playlists.push(playlist.name);
+              } else {
+                this.allSongs.push(song);
+              }
             }
+
+            // Increment songsLoaded for each track processed
+            this.songsLoaded++;
+          }
+
+          if (tracks.items.length < 50) {
+            hasMoreTracks = false;
+          } else {
+            offset += 50;
           }
         }
-
-        if (tracks.items.length < 50) {
-          hasMoreTracks = false;
-        } else {
-          offset += 50;
-        }
       }
-    }
 
-    this.isDataLoaded = true; // Set to true after loading is complete
-  }
-  searchSongs(query: string) {
+      this.isDataLoaded = true; // Set to true after loading is complete
+  }  searchSongs(query: string) {
     const lowercaseQuery = query.toLowerCase();
     this.searchResults = this.allSongs.filter(song =>
       song.name.toLowerCase().includes(lowercaseQuery) ||

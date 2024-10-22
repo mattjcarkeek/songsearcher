@@ -18,7 +18,7 @@
       <h3>Edit Spotlight Artist</h3>
       <div class="spotlight-search">
         <input #spotlightSearch type="text" placeholder="Search for artist" class="search-input"
-        (keyup.enter)="searchSpotlightArtist(editingSpotlight!, spotlightSearch.value)">
+               (keyup.enter)="searchSpotlightArtist(editingSpotlight!, spotlightSearch.value)">
         <button (click)="searchSpotlightArtist(editingSpotlight!, spotlightSearch.value)" class="search-button">Search</button>
       </div>
       <ul class="spotlight-results">
@@ -31,8 +31,15 @@
       <div class="confirmation-buttons">
         <button (click)="confirmSpotlightArtistUpdate()" 
                 *ngIf="selectedArtistForSpotlight" 
-                class="confirm-button">Confirm</button>
-        <button (click)="cancelEditSpotlight()" class="cancel-button">Cancel</button>
+                class="confirm-button"
+                [disabled]="isUpdatingSpotlight">
+          {{ isUpdatingSpotlight ? 'Updating...' : 'Confirm' }}
+        </button>
+        <button (click)="cancelEditSpotlight()" class="cancel-button" [disabled]="isUpdatingSpotlight">Cancel</button>
+      </div>
+      <div *ngIf="isUpdatingSpotlight" class="loading-overlay">
+        <div class="spinner"></div>
+        <p>Updating spotlight artist...</p>
       </div>
     </div>
 <main class="main">

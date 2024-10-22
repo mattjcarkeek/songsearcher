@@ -35,6 +35,7 @@ export class AppComponent implements OnInit {
   isDataLoaded: boolean = false;
   totalSongsToLoad: number = 0;
   songsLoaded: number = 0;
+  isUpdatingSpotlight: boolean = false;
 
   private playlistIds = [
     '5yeiIBl8YttUOvfvs0kXNs',
@@ -291,90 +292,102 @@ export class AppComponent implements OnInit {
       return;
     }
 
-    const sourcePlaylistIds = [
-      '5yeiIBl8YttUOvfvs0kXNs',
-      '1HgIJqYLqxKhgrw5jXALrb',
-      '0UWQxGY3dNsUTdlDJcMJH2',
-    ];
+    this.isUpdatingSpotlight = true;
 
-    let artistSongs: any[] = [];
+    try {
+      const sourcePlaylistIds = [
+        '5yeiIBl8YttUOvfvs0kXNs',
+        '1HgIJqYLqxKhgrw5jXALrb',
+        '0UWQxGY3dNsUTdlDJcMJH2',
+      ];
 
-    for (const sourcePlaylistId of sourcePlaylistIds) {
-      let offset = 0;
-      let hasMoreTracks = true;
+      let artistSongs: any[] = [];
 
-      while (hasMoreTracks) {
-        const tracks = await this.spotify.playlists.getPlaylistItems(sourcePlaylistId, undefined, undefined, 50, offset);
-        
-        const playlistArtistSongs = tracks.items
-          .filter(item => item.track && item.track.artists[0].name === artistName)
-          .map(item => item.track);
+      for (const sourcePlaylistId of sourcePlaylistIds) {
+        let offset = 0;
+        let hasMoreTracks = true;
 
-        artistSongs = [...artistSongs, ...playlistArtistSongs];
+        while (hasMoreTracks) {
+          const tracks = await this.spotify.playlists.getPlaylistItems(sourcePlaylistId, undefined, undefined, 50, offset);
+          
+          const playlistArtistSongs = tracks.items
+            .filter(item => item.track && item.track.artists[0].name === artistName)
+            .map(item => item.track);
 
-        if (tracks.items.length < 50) {
-          hasMoreTracks = false;
+          artistSongs = [...artistSongs, ...playlistArtistSongs];
+
+          if (tracks.items.length < 50) {
+            hasMoreTracks = false;
+          } else {
+            offset += 50;
+          }
+        }
+      }
+
+      const playlist = this.playlists.find(p => p.id === playlistId);
+
+      if (!playlist) {
+        console.error('Playlist not found');
+        return;
+      }
+
+      await this.spotify.playlists.updatePlaylistItems(playlistId, { uris: [] });
+
+      const trackUris = artistSongs.map(song => `spotify:track:${song.id}`);
+      await this.spotify.playlists.addItemsToPlaylist(playlistId, trackUris);
+
+      // Update local allSongs array
+      this.allSongs.forEach(song => {
+        const songIndex = song.playlists.indexOf(playlist.name);
+        if (songIndex !== -1) {
+          song.playlists.splice(songIndex, 1);
+        }
+      });
+
+      artistSongs.forEach(song => {
+        const existingSong = this.allSongs.find(s => s.id === song.id);
+        if (existingSong) {
+          if (!existingSong.playlists.includes(playlist.name)) {
+            existingSong.playlists.push(playlist.name);
+          }
         } else {
-          offset += 50;
+          this.allSongs.push({
+            id: song.id,
+            name: song.name,
+            artists: song.artists.map((artist: any) => artist.name).join(', '),
+            playlists: [playlist.name],
+            albumCover: song.album.images[0]?.url || ''
+          });
         }
+      });
+
+      this.spotlightArtists[playlistId] = {
+        name: `Spotlight: ${artistName}`,
+        artist: artistName,
+        image: artistSongs[0]?.album.images[0]?.url || ''
+      };
+
+      this.editingSpotlight = null;
+      this.spotlightSearchResults[playlistId] = [];
+      this.selectedArtistForSpotlight = null;
+
+      // Update search results if any
+      if (this.searchResults.length > 0) {
+        this.searchResults = this.searchResults.map(song => ({
+          ...song,
+          playlists: this.allSongs.find(s => s.id === song.id)?.playlists || []
+        }));
       }
+    } catch (error) {
+      console.error('Error updating spotlight artist:', error);
+      this.errorMessage = 'Failed to update spotlight artist.';
+      this.clearErrorMessage();
+    } finally {
+      this.isUpdatingSpotlight = false;
     }
+  }
 
-    const playlist = this.playlists.find(p => p.id === playlistId);
-
-    if (!playlist) {
-      console.error('Playlist not found');
-      return;
-    }
-
-    await this.spotify.playlists.updatePlaylistItems(playlistId, { uris: [] });
-
-    const trackUris = artistSongs.map(song => `spotify:track:${song.id}`);
-    await this.spotify.playlists.addItemsToPlaylist(playlistId, trackUris);
-
-    // Update local allSongs array
-    this.allSongs.forEach(song => {
-      const songIndex = song.playlists.indexOf(playlist.name);
-      if (songIndex !== -1) {
-        song.playlists.splice(songIndex, 1);
-      }
-    });
-
-    artistSongs.forEach(song => {
-      const existingSong = this.allSongs.find(s => s.id === song.id);
-      if (existingSong) {
-        if (!existingSong.playlists.includes(playlist.name)) {
-          existingSong.playlists.push(playlist.name);
-        }
-      } else {
-        this.allSongs.push({
-          id: song.id,
-          name: song.name,
-          artists: song.artists.map((artist: any) => artist.name).join(', '),
-          playlists: [playlist.name],
-          albumCover: song.album.images[0]?.url || ''
-        });
-      }
-    });
-
-    this.spotlightArtists[playlistId] = {
-      name: `Spotlight: ${artistName}`,
-      artist: artistName,
-      image: artistSongs[0]?.album.images[0]?.url || ''
-    };
-
-    this.editingSpotlight = null;
-    this.spotlightSearchResults[playlistId] = [];
-    this.selectedArtistForSpotlight = null;
-
-    // Update search results if any
-    if (this.searchResults.length > 0) {
-      this.searchResults = this.searchResults.map(song => ({
-        ...song,
-        playlists: this.allSongs.find(s => s.id === song.id)?.playlists || []
-      }));
-    }
-  }  cancelEditSpotlight() {
+  cancelEditSpotlight() {
     this.editingSpotlight = null;
     this.spotlightSearchResults = {};
     this.selectedArtistForSpotlight = null;
@@ -385,10 +398,11 @@ export class AppComponent implements OnInit {
   }
 
   confirmSpotlightArtistUpdate() {
-    if (this.editingSpotlight && this.selectedArtistForSpotlight) {
+    if (this.editingSpotlight && this.selectedArtistForSpotlight && !this.isUpdatingSpotlight) {
       this.updateSpotlightArtist(this.editingSpotlight, this.selectedArtistForSpotlight);
     }
   }
+
 
   private clearErrorMessage() {
     setTimeout(() => {

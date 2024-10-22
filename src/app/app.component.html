@@ -64,27 +64,34 @@
       {{ isSearching ? 'Searching...' : 'Search' }}
     </button>
   </div>
-  <div *ngIf="isAuthenticated" class="content-container">
+  <div *ngIf="isAuthenticated && isDataLoaded" class="content-container">
     <div class="search-results">
-      @for (song of searchResults; track song.name) {
-        <div class="song-item">
-          <img [src]="song.albumCover" alt="Album cover" class="album-cover">
-          <div class="song-details">
-            <h3>{{ song.name }}</h3>
-            <p>{{ song.artists }}</p>
-            <p class="playlist-info">Found in: {{ song.playlists.join(', ') }}</p>
-            @for (playlist of song.playlists; track playlist) {
-              <button (click)="deleteSong(song, playlist)" 
-                      [disabled]="isSearching" 
-                      class="delete-button">Delete from {{ playlist }}</button>
-            }
-            <button (click)="deleteFromAllLists(song)" 
-                    [disabled]="isSearching" 
-                    class="delete-all-button">Delete from all lists</button>
+      <ng-container *ngIf="searchResults.length > 0; else noResults">
+        <div *ngFor="let song of searchResults; trackBy: trackBySongId">
+          <div class="song-item">
+            <img [src]="song.albumCover" alt="Album cover" class="album-cover">
+            <div class="song-details">
+              <h3>{{ song.name }}</h3>
+              <p>{{ song.artists }}</p>
+              <p class="playlist-info">Found in: {{ song.playlists.join(', ') }}</p>
+              <div class="button-group">
+                <button *ngFor="let playlist of song.playlists"
+                        (click)="deleteSong(song, playlist)" 
+                        [disabled]="isSearching" 
+                        class="delete-button">Delete from {{ playlist }}</button>
+                <button (click)="deleteFromAllLists(song)" 
+                        [disabled]="isSearching" 
+                        class="delete-all-button">Delete from all lists</button>
+              </div>
+            </div>
           </div>
         </div>
-      }
+      </ng-container>
+      <ng-template #noResults>
+        <p class="no-results-message">No results, check spelling, start with the first two words of the song.</p>
+      </ng-template>
     </div>
+  </div>
     @if (deletedSongs.length > 0) {
       <div class="deleted-songs-column">
         <h2>Deleted Songs</h2>
@@ -102,7 +109,6 @@
         </ul>
       </div>
     }
-  </div>
 </main>
 
 <router-outlet></router-outlet>

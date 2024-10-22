@@ -36,6 +36,9 @@ export class AppComponent implements OnInit {
   totalSongsToLoad: number = 0;
   songsLoaded: number = 0;
   isUpdatingSpotlight: boolean = false;
+  trackBySongId(index: number, song: Song): string {
+    return song.id;
+  }
 
   private playlistIds = [
     '5yeiIBl8YttUOvfvs0kXNs',

@@ -56,9 +56,10 @@ h1 {
 .search-results {
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: stretch;
   width: 70%;
   max-width: 800px;
+  margin: 0 auto;
 }
 
 .song-item {
@@ -376,4 +377,9 @@ h1 {
   100% { transform: rotate(360deg); }
 }
 
-
+.no-results-message {
+  color: #ff4136;
+  font-size: 1.2rem;
+  text-align: center;
+  margin-top: 2rem;
+}

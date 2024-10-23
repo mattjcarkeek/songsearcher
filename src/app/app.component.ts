@@ -23,6 +23,7 @@ export class AppComponent implements OnInit {
   playlists: any[] = [];
   allSongs: Song[] = [];
   searchResults: Song[] = [];
+  hasSearched: boolean = false;
   deletedSongs: { song: Song, playlists: string[] }[] = [];
   private spotify: SpotifyApi | null = null;
   isSearching: boolean = false;
@@ -153,6 +154,8 @@ export class AppComponent implements OnInit {
 
       this.isDataLoaded = true; // Set to true after loading is complete
   }  searchSongs(query: string) {
+    this.hasSearched = true;
+
     const lowercaseQuery = query.toLowerCase();
     this.searchResults = this.allSongs.filter(song =>
       song.name.toLowerCase().includes(lowercaseQuery) ||
